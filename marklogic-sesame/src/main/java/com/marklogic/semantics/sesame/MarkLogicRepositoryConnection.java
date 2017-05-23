@@ -24,25 +24,26 @@ import com.marklogic.client.semantics.GraphPermissions;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.sesame.client.MarkLogicClient;
 import com.marklogic.semantics.sesame.query.*;
-import info.aduna.iteration.*;
-import org.openrdf.IsolationLevel;
-import org.openrdf.IsolationLevels;
-import org.openrdf.model.*;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.query.*;
-import org.openrdf.query.impl.DatasetImpl;
-import org.openrdf.query.parser.QueryParserUtil;
-import org.openrdf.query.parser.sparql.SPARQLUtil;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.UnknownTransactionStateException;
-import org.openrdf.repository.base.RepositoryConnectionBase;
-import org.openrdf.repository.sparql.query.SPARQLQueryBindingSet;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
+import org.eclipse.rdf4j.common.iteration.*;
+import org.eclipse.rdf4j.IsolationLevel;
+import org.eclipse.rdf4j.IsolationLevels;
+import org.eclipse.rdf4j.model.*;
+import org.eclipse.rdf4j.model.impl.StatementImpl;
+import org.eclipse.rdf4j.query.*;
+import org.eclipse.rdf4j.query.impl.DatasetImpl;
+import org.eclipse.rdf4j.query.impl.SimpleDataset;
+import org.eclipse.rdf4j.query.parser.QueryParserUtil;
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLUtil;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryResult;
+import org.eclipse.rdf4j.repository.UnknownTransactionStateException;
+import org.eclipse.rdf4j.repository.base.RepositoryConnectionBase;
+import org.eclipse.rdf4j.repository.sparql.query.SPARQLQueryBindingSet;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.Iterator;
 
-import static org.openrdf.query.QueryLanguage.SPARQL;
+import static org.eclipse.rdf4j.query.QueryLanguage.SPARQL;
 
 /**
  * RepositoryConnection to MarkLogic triplestore
@@ -494,7 +495,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @param includeInferred
      * @throws RepositoryException
      */
-    public RepositoryResult<Statement> getStatements(Resource subj, URI pred, Value obj, boolean includeInferred) throws RepositoryException {
+    public RepositoryResult<Statement> getStatements(Resource subj, IRI pred, Value obj, boolean includeInferred) throws RepositoryException {
         try {
             if (isQuadMode()) {
                 TupleQuery tupleQuery = prepareTupleQuery(GET_STATEMENTS);
@@ -549,7 +550,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    public RepositoryResult<Statement> getStatements(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws RepositoryException {
+    public RepositoryResult<Statement> getStatements(Resource subj, IRI pred, Value obj, boolean includeInferred, Resource... contexts) throws RepositoryException {
         if (contexts == null) {
             contexts = new Resource[] { null };
         }
@@ -643,7 +644,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    public boolean hasStatement(Resource subject, URI predicate, Value object, boolean includeInferred, Resource... contexts) throws RepositoryException {
+    public boolean hasStatement(Resource subject, IRI predicate, Value object, boolean includeInferred, Resource... contexts) throws RepositoryException {
         if(!this.isOpen()){throw new RepositoryException("Connection is closed.");}
         String queryString = null;
         if(contexts == null) {
@@ -716,7 +717,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RDFHandlerException
      */
     @Override
-    public void exportStatements(Resource subject, URI predicate, Value object, boolean includeInferred, RDFHandler handler, Resource... contexts) throws RepositoryException, RDFHandlerException {
+    public void exportStatements(Resource subject, IRI predicate, Value object, boolean includeInferred, RDFHandler handler, Resource... contexts) throws RepositoryException, RDFHandlerException {
         try {
             StringBuilder ob = new StringBuilder();
             StringBuilder sb = new StringBuilder();
@@ -1050,7 +1051,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    public void add(Resource subject, URI predicate, Value object, Resource... contexts) throws RepositoryException {
+    public void add(Resource subject, IRI predicate, Value object, Resource... contexts) throws RepositoryException {
         getClient().sendAdd(null, subject, predicate, object, contexts);
     }
 
@@ -1110,7 +1111,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    public void remove(Resource subject, URI predicate, Value object, Resource... contexts) throws RepositoryException {
+    public void remove(Resource subject, IRI predicate, Value object, Resource... contexts) throws RepositoryException {
         getClient().sendRemove(null, subject, predicate, object, contexts);
     }
 
@@ -1202,7 +1203,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    protected void addWithoutCommit(Resource subject, URI predicate, Value object, Resource... contexts) throws RepositoryException {
+    protected void addWithoutCommit(Resource subject, IRI predicate, Value object, Resource... contexts) throws RepositoryException {
         add(subject, predicate, object, contexts);
     }
 
@@ -1218,7 +1219,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @throws RepositoryException
      */
     @Override
-    protected void removeWithoutCommit(Resource subject, URI predicate, Value object, Resource... contexts) throws RepositoryException {
+    protected void removeWithoutCommit(Resource subject, IRI predicate, Value object, Resource... contexts) throws RepositoryException {
         remove(subject, predicate, object, contexts);
     }
 
@@ -1403,29 +1404,29 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      * @param contexts
      * @throws RepositoryException
      */
-    private void setBindings(Query query, Resource subj, URI pred, Value obj, Resource... contexts)
+    private void setBindings(Query query, Resource subj, IRI pred, Value obj, Resource... contexts)
             throws RepositoryException {
         if (subj != null) {
             query.setBinding("s", subj);
         }
-        if (pred != null && pred instanceof URI) {
+        if (pred != null) {
             query.setBinding("p", pred);
         }
         if (obj != null) {
             query.setBinding("o", obj);
         }
         if (contexts != null && contexts.length > 0) {
-            DatasetImpl dataset = new DatasetImpl();
+            SimpleDataset dataset = new SimpleDataset();
             if(notNull(contexts)){
             for (int i = 0; i < contexts.length; i++) {
-                if (notNull(contexts[i]) || contexts[i] instanceof URI) {
-                    dataset.addDefaultGraph((URI) contexts[i]);
+                if (notNull(contexts[i]) || contexts[i] instanceof IRI) {
+                    dataset.addDefaultGraph((IRI) contexts[i]);
                 } else {
-                    dataset.addDefaultGraph(getValueFactory().createURI(DEFAULT_GRAPH_URI));
+                    dataset.addDefaultGraph(getValueFactory().createIRI(DEFAULT_GRAPH_URI));
                 }
             }
             }else{
-                dataset.addDefaultGraph(getValueFactory().createURI(DEFAULT_GRAPH_URI));
+                dataset.addDefaultGraph(getValueFactory().createIRI(DEFAULT_GRAPH_URI));
             }
             query.setDataset(dataset);
         }

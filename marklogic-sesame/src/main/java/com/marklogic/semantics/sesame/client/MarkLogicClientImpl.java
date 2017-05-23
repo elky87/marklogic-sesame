@@ -28,14 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.Binding;
-import org.openrdf.repository.sparql.query.SPARQLQueryBindingSet;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFParseException;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.URI;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.Binding;
+import org.eclipse.rdf4j.repository.sparql.query.SPARQLQueryBindingSet;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -553,8 +553,8 @@ class MarkLogicClientImpl {
                 bindings.bind(variableName, object.stringValue());
             } else if (object instanceof Literal) {
                 Literal lit = (Literal) object;
-                if (lit.getLanguage() != null) {
-                    String languageTag = lit.getLanguage();
+                if (lit.getLanguage().isPresent()) {
+                    String languageTag = lit.getLanguage().get();
                     bindings.bind(variableName, lit.getLabel(), Locale.forLanguageTag(languageTag));
                 }else if (((Literal) object).getDatatype() != null) {
                     try {
