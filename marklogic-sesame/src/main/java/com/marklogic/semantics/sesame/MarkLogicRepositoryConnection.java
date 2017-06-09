@@ -699,7 +699,7 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
      */
     @Override
     public void export(RDFHandler handler, Resource... contexts) throws RepositoryException, RDFHandlerException {
-        exportStatements(null, null, null, true, handler);
+        exportStatements(null, null, null, true, handler, contexts);
     }
 
     /**
