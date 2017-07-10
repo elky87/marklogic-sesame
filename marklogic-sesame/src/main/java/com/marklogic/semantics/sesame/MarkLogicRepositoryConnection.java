@@ -32,7 +32,6 @@ import org.eclipse.rdf4j.model.impl.StatementImpl;
 import org.eclipse.rdf4j.query.*;
 import org.eclipse.rdf4j.query.impl.SimpleDataset;
 import org.eclipse.rdf4j.query.parser.QueryParserUtil;
-import org.eclipse.rdf4j.query.parser.sparql.SPARQLUtil;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.RepositoryResult;
@@ -51,9 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.stream.Collectors;
 
 import static org.eclipse.rdf4j.query.QueryLanguage.SPARQL;
 
@@ -720,38 +717,10 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
     @Override
     public void exportStatements(Resource subject, IRI predicate, Value object, boolean includeInferred, RDFHandler handler, Resource... contexts) throws RepositoryException, RDFHandlerException {
         try {
-            StringBuilder ob = new StringBuilder();
-            StringBuilder sb = new StringBuilder();
-
-            if(notNull(object) && object instanceof Literal) {
-                if (object instanceof Literal) {
-                    Literal lit = (Literal) object;
-                    ob.append("\"");
-                    ob.append(SPARQLUtil.encodeString(lit.getLabel()));
-                    ob.append("\"");
-                    ob.append("^^<" + lit.getDatatype().stringValue() + ">");
-                    ob.append(" ");
-                } else {
-                    ob.append("<" + object.stringValue() + "> ");
-                }
-                sb.append("CONSTRUCT {?s ?p "+ob.toString()+"} WHERE {");
-                if(notNull(contexts) && contexts.length>0) {
-                    sb.append(getContextsClause(object, contexts));
-                }else{
-                    sb.append("?s ?p "+ob.toString()+" }");
-                }
-            }else{
-                sb.append("CONSTRUCT {?s ?p ?o} WHERE {");
-                if(notNull(contexts) && contexts.length>0) {
-                    sb.append(getContextsClause(null, contexts));
-                }else{
-                    sb.append("?s ?p ?o }");
-                }
-            }
-            logger.debug(sb.toString());
-            MarkLogicGraphQuery query = prepareGraphQuery(sb.toString());
-            setBindings(query, subject, predicate, object, contexts);
-            query.evaluate(handler);
+            RepositoryResult<Statement> st = this.getStatements(subject, predicate, object, includeInferred, contexts);
+            handler.startRDF();
+            QueryResults.stream(st).forEach(handler::handleStatement);
+            handler.endRDF();
         }
         catch (MalformedQueryException e) {
             throw new RepositoryException(e);
@@ -759,26 +728,6 @@ public class MarkLogicRepositoryConnection extends RepositoryConnectionBase impl
         catch (QueryEvaluationException e) {
             throw new RepositoryException(e);
         }
-    }
-
-    private String getContextsClause(Value object, Resource... contexts){
-
-        String objectString = object != null ? object.stringValue() : "?o";
-
-        String unionGraphs = Arrays.stream(contexts)
-                .map(context -> {
-                    if(notNull(context)) {
-                        return context.stringValue();
-                    }else{
-                        return DEFAULT_GRAPH_URI;
-                    }
-                })
-                .map(stringContext -> "GRAPH <" + stringContext + "> {?s ?p " + objectString + " .} ")
-                .collect(Collectors.joining("} UNION {"));
-
-        unionGraphs = "{" + unionGraphs + "} }";
-
-        return unionGraphs;
     }
 
     /**
