@@ -19,26 +19,6 @@
  */
 package com.marklogic.semantics.sesame.client;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import org.eclipse.rdf4j.model.Literal;
-import org.eclipse.rdf4j.model.Resource;
-import org.eclipse.rdf4j.model.URI;
-import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.query.Binding;
-import org.eclipse.rdf4j.repository.sparql.query.SPARQLQueryBindingSet;
-import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.RDFParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
@@ -56,6 +36,27 @@ import com.marklogic.client.semantics.SPARQLQueryDefinition;
 import com.marklogic.client.semantics.SPARQLQueryManager;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.sesame.MarkLogicSesameException;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.URI;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.Binding;
+import org.eclipse.rdf4j.repository.sparql.query.SPARQLQueryBindingSet;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * internal class for interacting with java api client
@@ -387,15 +388,7 @@ class MarkLogicClientImpl {
         StringBuilder sb = new StringBuilder();
         if(notNull(contexts) && contexts.length>0) {
             if (notNull(baseURI))sb.append("BASE <" + baseURI + ">\n");
-            sb.append("DELETE WHERE { ");
-            for (int i = 0; i < contexts.length; i++) {
-                if (notNull(contexts[i])) {
-                    sb.append("GRAPH <" + contexts[i].stringValue() + "> { ?s ?p ?o .} ");
-                } else {
-                    sb.append("GRAPH <" + DEFAULT_GRAPH_URI + "> { ?s ?p ?o .} ");
-                }
-            }
-            sb.append("}");
+            sb.append(createDeleteQueries(contexts));
         }else{
             sb.append("DELETE WHERE { GRAPH ?ctx { ?s ?p ?o .}}");
         }
@@ -406,6 +399,19 @@ class MarkLogicClientImpl {
         if(notNull(predicate)) qdef.withBinding("p", predicate.stringValue());
         if(notNull(object)) bindObject(qdef, "o", object);
         sparqlManager.executeUpdate(qdef, tx);
+    }
+
+    private String createDeleteQueries(Resource... contexts){
+        return Arrays.stream(contexts)
+                .map(context -> {
+                    if(notNull(context)) {
+                        return context.stringValue();
+                    }else{
+                        return DEFAULT_GRAPH_URI;
+                    }
+                })
+                .map(stringContext -> "DELETE WHERE{ GRAPH <" + stringContext + "> {?s ?p ?o}} ")
+                .collect(Collectors.joining("; "));
     }
 
     /**
